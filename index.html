@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Бункер онлайн</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { background:#111418; color:#e6e6e6; font-family:Arial,sans-serif; margin:0; padding:20px 12px 60px; text-align:center; }
+    h1 { font-size:42px; letter-spacing:6px; color:#f5b942; margin:8px 0; }
+    h2 { color:#f5b942; }
+    .screen { max-width:960px; margin:0 auto; }
+    .hidden { display:none; }
+    input { background:#1c2128; color:#e6e6e6; border:2px solid #3a4250; border-radius:8px; padding:12px; font-size:18px; margin:6px; max-width:100%; }
+    button { background:#f5b942; color:#111418; border:none; border-radius:8px; padding:12px 20px; font-size:17px; font-weight:bold; cursor:pointer; margin:6px; }
+    button:hover { background:#ffd070; }
+    button.grey { background:#3a4250; color:#e6e6e6; }
+    button.red { background:#d9534f; color:#fff; }
+    .info { background:#1c2128; border-radius:12px; padding:12px; margin:12px auto; max-width:620px; }
+    .code { font-size:40px; letter-spacing:8px; color:#f5b942; font-weight:bold; }
+    .chip { display:inline-block; background:#1c2128; border:1px solid #3a4250; border-radius:20px; padding:6px 14px; margin:4px; }
+    .grid { display:flex; flex-wrap:wrap; justify-content:center; gap:14px; margin-top:16px; }
+    .card { background:#1c2128; border:2px solid #3a4250; border-radius:12px; width:260px; padding:14px; text-align:left; line-height:1.6; }
+    .card.me { border-color:#f5b942; }
+    .card.out { opacity:.35; border-color:#d9534f; }
+    .card h3 { margin:0 0 8px; color:#f5b942; text-align:center; }
+    .row { display:flex; justify-content:space-between; align-items:center; gap:8px; border-top:1px solid #2a313b; padding:4px 0; }
+    .label { color:#8a94a3; font-size:13px; }
+    .value { font-weight:bold; }
+    .secret { color:#666; letter-spacing:3px; }
+    .mine { color:#9fd49f; font-size:12px; }
+    .row button { padding:4px 10px; font-size:13px; margin:0; }
+    .timer { font-size:52px; font-weight:bold; color:#f5b942; margin:8px 0; }
+    .timer.low { color:#d9534f; }
+    .err { color:#ff8080; min-height:22px; }
+
+    /* ===== Новый дизайн ===== */
+    body { background: radial-gradient(ellipse at top, #1f2733 0%, #0c0f13 75%) fixed; }
+    .screen::before { content:''; display:block; height:10px; border-radius:5px; margin-bottom:6px; background:repeating-linear-gradient(45deg,#f5b942 0 14px,#15191f 14px 28px); }
+    h1 { text-shadow:0 0 18px rgba(245,185,66,.45); }
+    button { border-radius:10px; box-shadow:0 3px 0 #b8862a; transition:transform .1s; }
+    button:active { transform:translateY(3px); box-shadow:none; }
+    button.grey { box-shadow:0 3px 0 #252b34; }
+    button.red { box-shadow:0 3px 0 #a03a37; }
+    .info { border:1px solid #2c3542; }
+    #catastrophe { background:linear-gradient(135deg,#3a1d1d,#1c2128); border:2px solid #d9534f; font-size:17px; line-height:1.5; }
+    .cata-title { color:#ff8a80; font-weight:bold; letter-spacing:3px; margin-bottom:6px; }
+    .card { background:linear-gradient(160deg,#252e3a,#151a21); border:2px solid #36404e; border-radius:16px; padding:0 0 8px; overflow:hidden; box-shadow:0 8px 20px rgba(0,0,0,.45); transition:transform .2s; }
+    .card:hover { transform:translateY(-5px); }
+    .card.me { border-color:#f5b942; box-shadow:0 0 22px rgba(245,185,66,.3); }
+    .card.out { filter:grayscale(1); }
+    .card h3 { margin:0 0 6px; padding:12px; background:rgba(245,185,66,.12); border-bottom:1px solid #36404e; font-size:18px; }
+    .ava { display:inline-block; width:30px; height:30px; line-height:30px; border-radius:50%; background:#f5b942; color:#111418; margin-right:8px; font-size:16px; }
+    .row { padding:6px 14px; border-top:1px solid #222a34; }
+    .ico { font-size:20px; width:26px; text-align:center; flex:none; }
+    .txt { flex:1; text-align:left; }
+    .row.open .value { color:#ffd070; }
+    .secret { display:inline-block; border-radius:6px; padding:2px 10px; color:#7b8696; letter-spacing:1px; font-size:13px; background:repeating-linear-gradient(45deg,#1c222b 0 6px,#232b36 6px 12px); }
+  </style>
+</head>
+<body>
+<div class="screen">
+  <h1>БУНКЕР</h1>
+
+  <div id="home">
+    <p>Игра онлайн для 3–12 игроков. Каждый заходит со своего устройства.</p>
+    <div><input id="nameInput" placeholder="Твоё имя" maxlength="16"></div>
+    <div><button onclick="createRoom()">Создать комнату</button></div>
+    <div>
+      <input id="codeInput" placeholder="Код комнаты" maxlength="4" style="text-transform:uppercase;width:160px">
+      <button class="grey" onclick="joinRoom()">Войти</button>
+    </div>
+    <div class="err" id="homeErr"></div>
+  </div>
+
+  <div id="lobby" class="hidden">
+    <p>Код комнаты — скажи его друзьям:</p>
+    <div class="code" id="lobbyCode"></div>
+    <div class="info">Игроки в комнате:<div id="lobbyPlayers"></div></div>
+    <div id="hostStart" class="hidden">
+      <button onclick="startGame()">Начать игру</button>
+    </div>
+    <p id="waitHost" class="hidden">Ждём, пока создатель комнаты начнёт игру...</p>
+  </div>
+
+  <div id="game" class="hidden">
+    <div class="info" id="catastrophe"></div>
+    <div class="info" id="status"></div>
+    <div class="info" id="notice" style="color:#f5b942"></div>
+    <div class="timer" id="timer">00:00</div>
+    <div id="hostControls" class="hidden">
+      <button onclick="hostTimer(true)">Запустить таймер</button>
+      <button class="grey" onclick="hostTimer(false)">Пауза</button>
+      <button onclick="startVoting()">Начать голосование</button>
+    </div>
+    <div><button class="red" id="leaveBtn" onclick="leaveVoluntarily()">Добровольно уйти из бункера</button></div>
+    <div class="grid" id="cards"></div>
+  </div>
+
+  <div id="voting" class="hidden">
+    <h2>Голосование</h2>
+    <p id="voteInfo"></p>
+    <div id="voteButtons"></div>
+    <div class="info" id="voteProgress"></div>
+  </div>
+
+  <div id="final" class="hidden">
+    <h2>Игра окончена!</h2>
+    <div class="info" id="finalText"></div>
+    <div class="grid" id="finalCards"></div>
+    <button onclick="location.reload()">В начало</button>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+  // ===== Подключение к твоей базе Firebase =====
+  const firebaseConfig = {
+    apiKey: "AIzaSyDjNriuVQ-CXHZyB0spkr4J9Xocof5nVNo",
+    authDomain: "bunkergame-47ce9.firebaseapp.com",
+    databaseURL: "https://bunkergame-47ce9-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "bunkergame-47ce9",
+    storageBucket: "bunkergame-47ce9.firebasestorage.app",
+    messagingSenderId: "189960183473",
+    appId: "1:189960183473:web:f9b0b144e9f01a7044cc90"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // ===== Данные для карточек =====
+  const professions = ['Врач','Повар','Программист','Инженер','Учитель','Фермер','Военный','Электрик','Художник','Психолог','Строитель','Биолог','Юрист','Механик','Пекарь'];
+  const healthList = ['Полностью здоров','Аллергия на пыль','Плохое зрение','Хроническая усталость','Отличная физическая форма','Астма','Диабет','Слабое сердце'];
+  const hobbies = ['Рыбалка','Шахматы','Готовка','Садоводство','Радиолюбитель','Игра на гитаре','Туризм','Рукоделие','Охота','Скалолазание'];
+  const traits = ['Лидер','Спокойный','Вспыльчивый','Добрый','Хитрый','Трудолюбивый','Ленивый','Весёлый','Трусливый','Храбрый'];
+  const items = ['Аптечка','Рация','Набор инструментов','Семена растений','Фонарик','Нож','Книга по выживанию','Генератор','Ничего','Фильтр для воды'];
+  const facts = ['Умеет водить грузовик','Знает три языка','Боится темноты','Был в армии','Умеет шить','Не умеет готовить','Имеет двоих детей','Снимался в кино','Умеет оказывать первую помощь','Никогда не болел'];
+  const catastrophes = [
+    'Ядерная война. На поверхности радиация, выходить нельзя минимум 5 лет.',
+    'Эпидемия смертельного вируса. Снаружи заражённые, ждать нужно около 2 лет.',
+    'Падение метеорита. Небо закрыто пылью, на поверхности холод и нет еды.',
+    'Мировое наводнение. Суша почти скрыта под водой, ждать нужно около 3 лет.',
+    'Восстание машин. Роботы патрулируют поверхность, ждать нужно неизвестно сколько.'
+  ];
+  const fields = [
+    {key:'profession',label:'Профессия',icon:'💼'},{key:'age',label:'Возраст',icon:'🎂'},{key:'health',label:'Здоровье',icon:'❤️'},
+    {key:'hobby',label:'Хобби',icon:'🎨'},{key:'trait',label:'Характер',icon:'🎭'},{key:'item',label:'Предмет',icon:'🎒'},{key:'fact',label:'Факт',icon:'📌'}
+  ];
+
+  let roomCode = null;
+  let myId = null;
+  let isHost = false;
+  let room = null;
+  let ticker = null;
+
+  function pick(list) { return list[Math.floor(Math.random() * list.length)]; }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function $(id) { return document.getElementById(id); }
+  function show(id) {
+    ['home','lobby','game','voting','final'].forEach(function(s){ $(s).classList.add('hidden'); });
+    $(id).classList.remove('hidden');
+  }
+  function makeCode() {
+    const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    let c = '';
+    for (let i = 0; i < 4; i++) c += letters[Math.floor(Math.random() * letters.length)];
+    return c;
+  }
+  function makeCard() {
+    return {
+      profession: pick(professions), age: String(Math.floor(Math.random()*60)+18),
+      health: pick(healthList), hobby: pick(hobbies), trait: pick(traits),
+      item: pick(items), fact: pick(facts)
+    };
+  }
+
+  // ===== Вход в комнату =====
+  function createRoom() {
+    const name = $('nameInput').value.trim();
+    if (!name) { $('homeErr').textContent = 'Введи своё имя'; return; }
+    roomCode = makeCode();
+    myId = 'p' + Date.now() + Math.floor(Math.random() * 1000);
+    isHost = true;
+    const data = { host: myId, state: 'lobby', round: 1, timeLeft: 120, timerOn: false, players: {} };
+    data.players[myId] = { name: name, alive: true, revealed: {}, joined: Date.now() };
+    db.ref('rooms/' + roomCode).set(data).then(listenRoom);
+  }
+
+  function joinRoom() {
+    const name = $('nameInput').value.trim();
+    const code = $('codeInput').value.trim().toUpperCase();
+    if (!name) { $('homeErr').textContent = 'Введи своё имя'; return; }
+    if (code.length !== 4) { $('homeErr').textContent = 'Код — 4 буквы'; return; }
+    db.ref('rooms/' + code).once('value').then(function (snap) {
+      const r = snap.val();
+      if (!r) { $('homeErr').textContent = 'Такой комнаты нет'; return; }
+      if (r.state !== 'lobby') { $('homeErr').textContent = 'Игра уже началась'; return; }
+      if (Object.keys(r.players || {}).length >= 12) { $('homeErr').textContent = 'Комната полная'; return; }
+      roomCode = code;
+      myId = 'p' + Date.now() + Math.floor(Math.random() * 1000);
+      isHost = false;
+      db.ref('rooms/' + code + '/players/' + myId).set({ name: name, alive: true, revealed: {}, joined: Date.now() }).then(listenRoom);
+    });
+  }
+
+  function listenRoom() {
+    db.ref('rooms/' + roomCode).on('value', function (snap) {
+      room = snap.val();
+      if (!room) return;
+      render();
+    });
+    if (!ticker) ticker = setInterval(tick, 1000);
+  }
+
+  // ===== Отрисовка по состоянию комнаты =====
+  function playersArr() {
+    const ps = room.players || {};
+    return Object.keys(ps).map(function (id) { const p = ps[id]; p.id = id; return p; })
+      .sort(function (a, b) { return a.joined - b.joined; });
+  }
+  function alivePlayers() { return playersArr().filter(function (p) { return p.alive; }); }
+
+  function render() {
+    if (!room.players || !room.players[myId]) return;
+    // Если создатель комнаты ушёл, роль переходит к первому живому игроку
+    const hostPlayer = room.players[room.host];
+    if ((!hostPlayer || !hostPlayer.alive) && room.state !== 'lobby' && room.state !== 'final') {
+      const next = alivePlayers()[0];
+      if (next && next.id === myId && room.host !== myId) {
+        db.ref('rooms/' + roomCode + '/host').set(myId);
+      }
+    }
+    isHost = (room.host === myId);
+    if (room.state === 'lobby') renderLobby();
+    else if (room.state === 'game') renderGame();
+    else if (room.state === 'voting') renderVoting();
+    else if (room.state === 'final') renderFinal();
+  }
+
+  function renderLobby() {
+    show('lobby');
+    $('lobbyCode').textContent = roomCode;
+    $('lobbyPlayers').innerHTML = playersArr().map(function (p) { return '<span class="chip">' + esc(p.name) + '</span>'; }).join('');
+    $('hostStart').classList.toggle('hidden', !isHost);
+    $('waitHost').classList.toggle('hidden', isHost);
+  }
+
+  function startGame() {
+    const ps = playersArr();
+    if (ps.length < 3) { alert('Нужно минимум 3 игрока'); return; }
+    const updates = {};
+    ps.forEach(function (p) { updates['players/' + p.id + '/data'] = makeCard(); });
+    updates['seats'] = Math.floor(ps.length / 2);
+    updates['catastrophe'] = pick(catastrophes);
+    updates['timeLeft'] = 120;
+    updates['timerOn'] = false;
+    updates['state'] = 'game';
+    db.ref('rooms/' + roomCode).update(updates);
+  }
+
+  function cardHtml(p, canReveal) {
+    const mine = p.id === myId;
+    const rows = fields.map(function (f) {
+      const open = p.revealed && p.revealed[f.key];
+      let value;
+      if (open) value = esc(p.data[f.key]);
+      else if (mine) value = esc(p.data[f.key]) + ' <span class="mine">(видишь только ты)</span>';
+      else value = '<span class="secret">🔒 скрыто</span>';
+      const btn = (mine && !open && p.alive && canReveal)
+        ? '<button onclick="reveal(\'' + f.key + '\')">Открыть</button>' : '';
+      return '<div class="row' + (open ? ' open' : '') + '"><span class="ico">' + f.icon + '</span><div class="txt"><div class="label">' + f.label + '</div><div class="value">' + value + '</div></div>' + btn + '</div>';
+    }).join('');
+    return '<div class="card ' + (mine ? 'me ' : '') + (p.alive ? '' : 'out') + '"><h3><span class="ava">' + esc(p.name.charAt(0).toUpperCase()) + '</span>' + esc(p.name) + (mine ? ' (ты)' : '') + (p.alive ? '' : ' — вне бункера') + '</h3>' + rows + '</div>';
+  }
+
+  function renderGame() {
+    show('game');
+    $('catastrophe').innerHTML = '<div class="cata-title">☢️ КАТАСТРОФА</div>' + esc(room.catastrophe);
+    $('status').innerHTML = '<b>Раунд ' + room.round + '.</b> Мест в бункере: <b>' + room.seats + '</b>. Живых игроков: <b>' + alivePlayers().length + '</b>.';
+    $('notice').textContent = room.notice || '';
+    $('notice').classList.toggle('hidden', !room.notice);
+    $('hostControls').classList.toggle('hidden', !isHost);
+    const me = room.players[myId];
+    $('leaveBtn').classList.toggle('hidden', !me || !me.alive);
+    $('cards').innerHTML = playersArr().map(function (p) { return cardHtml(p, true); }).join('');
+    updateTimerView();
+  }
+
+  function reveal(key) {
+    db.ref('rooms/' + roomCode + '/players/' + myId + '/revealed/' + key).set(true);
+  }
+
+  // ===== Таймер (ведёт создатель комнаты) =====
+  function fmt(s) { const m = Math.floor(s / 60), r = s % 60; return String(m).padStart(2,'0') + ':' + String(r).padStart(2,'0'); }
+  function updateTimerView() {
+    if (!room) return;
+    $('timer').textContent = fmt(Math.max(0, room.timeLeft || 0));
+    $('timer').classList.toggle('low', (room.timeLeft || 0) <= 10);
+  }
+  function hostTimer(on) { db.ref('rooms/' + roomCode + '/timerOn').set(on); }
+  function tick() {
+    if (!room || room.state !== 'game' || !isHost || !room.timerOn) return;
+    if (room.timeLeft > 0) db.ref('rooms/' + roomCode + '/timeLeft').set(room.timeLeft - 1);
+    else db.ref('rooms/' + roomCode + '/timerOn').set(false);
+  }
+
+  // ===== Добровольный уход =====
+  function leaveVoluntarily() {
+    if (!confirm('Точно уйти из бункера?')) return;
+    const updates = {};
+    updates['players/' + myId + '/alive'] = false;
+    updates['notice'] = room.players[myId].name + ' добровольно покинул бункер.';
+    fields.forEach(function (f) { updates['players/' + myId + '/revealed/' + f.key] = true; });
+    db.ref('rooms/' + roomCode).update(updates).then(checkEnd);
+  }
+
+  function checkEnd() {
+    db.ref('rooms/' + roomCode).once('value').then(function (snap) {
+      const r = snap.val();
+      const alive = Object.keys(r.players).filter(function (id) { return r.players[id].alive; }).length;
+      if (alive <= r.seats) {
+        db.ref('rooms/' + roomCode + '/state').set('final');
+      } else if (r.state === 'voting') {
+        db.ref('rooms/' + roomCode + '/votes').set(null);
+      }
+    });
+  }
+
+  // ===== Голосование =====
+  function startVoting() {
+    db.ref('rooms/' + roomCode).update({ state: 'voting', votes: null, timerOn: false });
+  }
+
+  function renderVoting() {
+    show('voting');
+    const alive = alivePlayers();
+    const votes = room.votes || {};
+    const me = room.players[myId];
+    const voted = votes[myId];
+    if (!me || !me.alive) {
+      $('voteInfo').textContent = 'Ты вне бункера и не голосуешь. Смотри, чем закончится.';
+      $('voteButtons').innerHTML = '';
+    } else if (voted) {
+      $('voteInfo').textContent = 'Твой голос принят. Ждём остальных...';
+      $('voteButtons').innerHTML = '';
+    } else {
+      $('voteInfo').textContent = 'Кого изгнать из бункера?';
+      $('voteButtons').innerHTML = alive.filter(function (p) { return p.id !== myId; }).map(function (p) {
+        return '<button class="red" onclick="vote(\'' + p.id + '\')">' + esc(p.name) + '</button>';
+      }).join('');
+    }
+    // Считаем только голоса живых игроков за живых игроков
+    const aliveIds = alive.map(function (p) { return p.id; });
+    const validVotes = {};
+    Object.keys(votes).forEach(function (v) {
+      if (aliveIds.indexOf(v) !== -1 && aliveIds.indexOf(votes[v]) !== -1) validVotes[v] = votes[v];
+    });
+    $('voteProgress').textContent = 'Проголосовало: ' + Object.keys(validVotes).length + ' из ' + alive.length;
+    if (isHost && Object.keys(validVotes).length >= alive.length && alive.length > 0) finishVoting(validVotes, alive);
+  }
+
+  function vote(targetId) {
+    db.ref('rooms/' + roomCode + '/votes/' + myId).set(targetId);
+  }
+
+  function finishVoting(votes, alive) {
+    const count = {};
+    Object.keys(votes).forEach(function (v) { count[votes[v]] = (count[votes[v]] || 0) + 1; });
+    let max = 0;
+    Object.keys(count).forEach(function (id) { if (count[id] > max) max = count[id]; });
+    const leaders = Object.keys(count).filter(function (id) { return count[id] === max; });
+    const updates = { votes: null, timeLeft: 120, timerOn: false };
+    if (leaders.length > 1) {
+      updates.state = 'game';
+      updates.notice = 'Ничья в голосовании. Обсудите ещё раз.';
+    } else {
+      const outId = leaders[0];
+      updates['players/' + outId + '/alive'] = false;
+      fields.forEach(function (f) { updates['players/' + outId + '/revealed/' + f.key] = true; });
+      updates.round = room.round + 1;
+      updates.notice = 'Изгнан: ' + room.players[outId].name;
+      updates.state = (alive.length - 1 <= room.seats) ? 'final' : 'game';
+    }
+    db.ref('rooms/' + roomCode).update(updates);
+  }
+
+  function renderFinal() {
+    show('final');
+    const winners = alivePlayers().map(function (p) { return esc(p.name); }).join(', ');
+    $('finalText').innerHTML = 'В бункер попали: <b>' + winners + '</b>';
+    $('finalCards').innerHTML = playersArr().map(function (p) {
+      p.revealed = {}; fields.forEach(function (f) { p.revealed[f.key] = true; });
+      return cardHtml(p, false);
+    }).join('');
+  }
+</script>
+</body>
+</html>
